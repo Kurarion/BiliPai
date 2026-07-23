@@ -599,15 +599,15 @@ class CdnRegionPlugin : PlaybackCdnPlugin {
                 location = location,
                 catalog = loadedCatalog
             )
-            val next = CdnRegionPluginCache(
+            val latest = CdnRegionPluginStore.read(context)
+            val next = latest.copy(
                 location = location,
                 selectedRegion = selection.region,
                 selectedHosts = selection.hosts,
                 fallbackRegion = "",
                 fallbackUsed = selection.fallbackUsed,
                 refreshedAtMs = System.currentTimeMillis(),
-                lastError = null,
-                healthByHost = current.healthByHost
+                lastError = null
             )
             cache = next
             CdnRegionPluginStore.write(context, next)
@@ -618,7 +618,8 @@ class CdnRegionPlugin : PlaybackCdnPlugin {
                     (selection.region.ifBlank { "未命中" })
             )
         } catch (e: Exception) {
-            val preserved = current.copy(lastError = e.message ?: e.javaClass.simpleName)
+            val latest = CdnRegionPluginStore.read(context)
+            val preserved = latest.copy(lastError = e.message ?: e.javaClass.simpleName)
             cache = preserved
             CdnRegionPluginStore.write(context, preserved)
             Logger.w(TAG, "CDN 属地刷新失败，保留旧缓存: ${e.message}")
